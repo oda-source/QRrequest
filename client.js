@@ -5,20 +5,34 @@ window.TrelloPowerUp.initialize({
       icon: 'https://api.iconify.design/ion:qr-code.svg?color=%234f46e5',
       text: 'QRコード依頼',
       callback: function (t) {
-        // 現在のボードの全カードを取得して「QR添付カード」を探す
-        return t.cards('name', 'url').then(function (cards) {
-          var targetCard = cards.find(function (card) {
-            return card.name.trim() === 'QR添付カード';
-          });
-          
-          // カードが見つかればそのURL、なければボード全体のURLを取得
-          var cardUrl = targetCard ? targetCard.url : '';
+        // ボード情報とカード一覧を安全に同時取得
+        return Promise.all([
+          t.board('url', 'name'),
+          t.cards('name', 'url')
+        ]).then(function (results) {
+          var board = results[0];
+          var cards = results[1] || [];
 
+          // 「QR添付カード」という名前のカードを探す
+          var targetCard = cards.find(function (card) {
+            return card.name && card.name.trim() === 'QR添付カード';
+          });
+
+          // 見つかればカードURL、見つからなければボードURLを使う
+          var targetUrl = targetCard ? targetCard.url : board.url;
+
+          return t.popup({
+            title: 'QRコード依頼',
+            url: './index.html?targetUrl=' + encodeURIComponent(targetUrl) + '&boardName=' + encodeURIComponent(board.name),
+            height: 680
+          });
+        }).catch(function (err) {
+          console.error('Trello Power-Up Error:', err);
+          // エラー時でも最低限ボードURLを取得して開く
           return t.board('url', 'name').then(function (board) {
-            var finalUrl = cardUrl || board.url;
             return t.popup({
               title: 'QRコード依頼',
-              url: './index.html?targetUrl=' + encodeURIComponent(finalUrl) + '&boardName=' + encodeURIComponent(board.name),
+              url: './index.html?targetUrl=' + encodeURIComponent(board.url) + '&boardName=' + encodeURIComponent(board.name),
               height: 680
             });
           });
