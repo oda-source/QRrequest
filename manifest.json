@@ -3,7 +3,7 @@
   "details": "Trello内でQRコード手配・依頼を行う機能",
   "html": "index.html",
   "icon": {
-    "url": "https://cdn.icon-icons.com/icons2/2699/SHA/512/trello_tile_logo_icon_168807.png"
+    "url": "https://api.iconify.design/ion:qr-code.svg?color=%234f46e5"
   },
   "capabilities": [
     "board-buttons"
