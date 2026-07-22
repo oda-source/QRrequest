@@ -2,7 +2,7 @@
 window.TrelloPowerUp.initialize({
   'board-buttons': function (t, opts) {
     return [{
-      icon: 'https://cdn.icon-icons.com/icons2/2699/SHA/512/trello_tile_logo_icon_168807.png',
+      icon: 'https://api.iconify.design/ion:qr-code.svg?color=%234f46e5',
       text: 'QR Flow Express',
       callback: function (t) {
         return t.popup({
