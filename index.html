@@ -273,7 +273,7 @@
       closeApiModal();
     }
 
-    // フォーム送信処理
+   // フォーム送信処理
     document.getElementById('qrRequestForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
@@ -281,12 +281,13 @@
       const gasUrl = localStorage.getItem('gasWebApiUrl');
 
       if (!gasUrl) {
-        alert('【エラー】GASのURLが設定されていません。\n右上の青い「⚙️ GAS設定」ボタンからURLを入力してください。');
+        alert('【エラー】GASのURLが設定されていません。\n右上の「⚙️ GAS設定」からURLを入力してください。');
         return;
       }
 
+      // Trelloから自動取得したURL（QR添付カードのURL）を取り出す
       const urlParams = new URLSearchParams(window.location.search);
-      const boardUrl = urlParams.get('boardUrl') || '';
+      const targetUrl = urlParams.get('targetUrl') || '';
       const boardName = urlParams.get('boardName') || '';
 
       submitBtn.disabled = true;
@@ -296,7 +297,7 @@
       const data = {
         email: formData.get('email'),
         courseNumbers: formData.get('courseNumbers'),
-        boardUrl: boardUrl,
+        targetUrl: targetUrl,
         boardName: boardName
       };
 
