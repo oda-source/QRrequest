@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QRコード発行・納品管理システム (実運用対応版)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .animate-fade-in { animation: fadeIn 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Header Navigation -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2 rounded-lg text-white shadow">
+                    <i class="fa-solid fa-qrcode text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight flex items-center gap-2">
+                        QR Flow Express
+                        <span id="systemModeBadge" class="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-normal">デモモード (ローカル)</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">QRコード手配・個人メール通知・サムネイル納品管理</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <button onclick="openSettingsModal()" class="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition text-xs flex items-center gap-1.5 border border-slate-700">
+                    <i class="fa-solid fa-gear"></i>
+                    <span class="hidden sm:inline">API/GAS設定</span>
+                </button>
+                <button onclick="openNotificationModal()" class="relative p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-full transition">
+                    <i class="fa-solid fa-envelope text-lg"></i>
+                    <span id="emailBadge" class="absolute top-1 right-1 bg-indigo-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+                </button>
+                <button onclick="openNewRequestModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 py-2 rounded-lg text-sm flex items-center gap-2 shadow transition">
+                    <i class="fa-solid fa-plus"></i> 新規QR依頼を作成
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Mode Banner -->
+        <div id="demoAlertBanner" class="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl mb-6 flex items-start sm:items-center justify-between gap-3 text-xs">
+            <div class="flex items-start gap-2">
+                <i class="fa-solid fa-triangle-exclamation text-amber-600 text-base mt-0.5 sm:mt-0"></i>
+                <div>
+                    <strong>現在は【ローカル・体験デモモード】で動作中です。</strong>
+                    <span>右上「API/GAS設定」からGoogle Apps ScriptのURLを設定すると、実際に社内共有＆メール送信ができるようになります。</span>
+                </div>
+            </div>
+            <button onclick="openSettingsModal()" class="underline font-bold whitespace-nowrap hover:text-amber-900">GAS連携手順を見る</button>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <div class="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">全依頼数</div>
+                <div class="text-2xl font-bold text-slate-900" id="statTotal">0</div>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-amber-500">
+                <div class="text-amber-600 text-xs font-semibold uppercase tracking-wider mb-1">未対応 (手配中)</div>
+                <div class="text-2xl font-bold text-slate-900" id="statPending">0</div>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-blue-500">
+                <div class="text-blue-600 text-xs font-semibold uppercase tracking-wider mb-1">確認中 / 添付済み</div>
+                <div class="text-2xl font-bold text-slate-900" id="statReview">0</div>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500">
+                <div class="text-emerald-600 text-xs font-semibold uppercase tracking-wider mb-1">納品完了</div>
+                <div class="text-2xl font-bold text-slate-900" id="statCompleted">0</div>
+            </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6 flex flex-col sm:flex-row gap-4 justify-between items-center">
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <span class="text-sm font-medium text-slate-600">ステータス:</span>
+                <select id="filterStatus" onchange="renderRequests()" class="bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <option value="ALL">すべて表示</option>
+                    <option value="未対応">未対応</option>
+                    <option value="確認中">確認中 (QRアップ済み)</option>
+                    <option value="完了">完了</option>
+                </select>
+            </div>
+            <div class="relative w-full sm:w-64">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
+                <input type="text" id="searchInput" oninput="renderRequests()" placeholder="品番・依頼者で検索..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+        </div>
+
+        <!-- Requests Grid / List -->
+        <div id="requestsList" class="grid grid-cols-1 gap-6">
+            <!-- Dynamic Content generated by JS -->
+        </div>
+
+    </main>
+
+    <!-- Modal: 新規依頼作成 -->
+    <div id="modalNewRequest" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 animate-fade-in">
+        <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-file-circle-plus text-indigo-600"></i> 新規QRコード手配依頼
+                </h3>
+                <button onclick="closeModal('modalNewRequest')" class="text-slate-400 hover:text-slate-600 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form id="formNewRequest" onsubmit="handleCreateRequest(event)" class="p-6 space-y-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">依頼者名</label>
+                        <input type="text" id="inputRequester" required placeholder="例: 木村 (制作部)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">QR発行担当者 (通知先個人メール)</label>
+                        <input type="email" id="inputAssigneeEmail" required placeholder="例: h.yamada@example.com" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">対象冊子 / 台割ページ</label>
+                    <input type="text" id="inputProjectName" required placeholder="例: カタログ2026年号 (P.10 - P.12)" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">依頼品番リスト (カンマまたは改行区切り)</label>
+                    <textarea id="inputItemCodes" rows="3" required placeholder="例: 8K069, 2K189, 5K706, 5K702, 6K562, 4K508" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                    <p class="text-xs text-slate-400 mt-1">※複数の型番を一気に指定できます</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">希望納品期日</label>
+                        <input type="date" id="inputDueDate" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">形式 / 仕様指定</label>
+                        <input type="text" id="inputSpec" placeholder="例: PNG形式 / 15x15mm" value="PNG形式 / 15x15mm" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">備考・注意事項</label>
+                    <input type="text" id="inputNotes" placeholder="例: 8Kシリーズは新製品のため優先手配でお願いします" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('modalNewRequest')" class="px-4 py-2 border border-slate-300 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50">キャンセル</button>
+                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium shadow flex items-center gap-2">
+                        <i class="fa-solid fa-paper-plane"></i> 依頼送信 & 個人メール通知
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: QR画像納品 & サムネイルアップロード -->
+    <div id="modalUploadQR" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 animate-fade-in">
+        <div class="bg-white rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-up text-indigo-600"></i> QRコードのアップロード & 納品
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5" id="uploadModalSubTitle">対象依頼 ID: -</p>
+                </div>
+                <button onclick="closeModal('modalUploadQR')" class="text-slate-400 hover:text-slate-600 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <!-- Dropzone for QR files -->
+                <div class="border-2 border-dashed border-indigo-200 bg-indigo-50/50 rounded-xl p-6 text-center hover:bg-indigo-50 transition cursor-pointer relative" id="dropZone" onclick="document.getElementById('fileQRInput').click()">
+                    <input type="file" id="fileQRInput" multiple accept="image/*" class="hidden" onchange="handleFileSelect(event)">
+                    <div class="text-indigo-600 text-3xl mb-2">
+                        <i class="fa-solid fa-images"></i>
+                    </div>
+                    <p class="text-sm font-bold text-slate-700">QRコード画像をここにドラッグ＆ドロップ</p>
+                    <p class="text-xs text-slate-500 mt-1">またはクリックしてファイルを選択 (PNG / JPG)</p>
+                    <p class="text-[11px] text-indigo-600 font-mono mt-2">※ファイル名に品番（例: 8K069.png）を含めると自動照合されます</p>
+                </div>
+
+                <!-- Live Preview Thumbnails -->
+                <div>
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-eye text-slate-400"></i> 添付済みサムネイル一覧 (<span id="uploadedCount">0</span>)
+                        </h4>
+                        <button onclick="generateDummyQRs()" class="text-xs text-indigo-600 hover:underline flex items-center gap-1">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> テスト用ダミーQR一括生成
+                        </button>
+                    </div>
+
+                    <div id="thumbnailContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 min-h-[140px] items-center justify-center">
+                        <p class="text-xs text-slate-400 col-span-full text-center">画像はまだアップロードされていません</p>
+                    </div>
+                </div>
+
+                <!-- Completion Actions -->
+                <div class="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('modalUploadQR')" class="px-4 py-2 border border-slate-300 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50">保存して閉じる</button>
+                    <button type="button" onclick="completeRequestDelivery()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium shadow flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check"></i> 納品完了にして依頼者に通知
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: API/GAS 設定 -->
+    <div id="modalSettings" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 animate-fade-in">
+        <div class="bg-white rounded-2xl shadow-xl max-w-xl w-full max-h-[85vh] overflow-y-auto flex flex-col">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-gears text-indigo-600"></i> 実運用 (GAS) 連携設定
+                    </h3>
+                    <p class="text-xs text-slate-500">Google Apps Scriptと接続して本番運用できます</p>
+                </div>
+                <button onclick="closeModal('modalSettings')" class="text-slate-400 hover:text-slate-600 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-4 text-xs text-slate-700 flex-1">
+                <div>
+                    <label class="block font-bold mb-1 text-slate-800">GAS Web API エンドポイント URL</label>
+                    <input type="text" id="gasApiUrl" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <p class="text-[11px] text-slate-400 mt-1">※URLを設定すると、ローカルストレージではなくスプレッドシート連携に自動切り替わります。</p>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
+                    <p class="font-bold text-slate-800 text-xs">💡 GAS連携構築のステップ（所要時間：約5分）</p>
+                    <ol class="list-decimal list-inside space-y-1.5 text-slate-600 leading-relaxed">
+                        <li>Googleスプレッドシートを新規作成</li>
+                        <li>メニュー「拡張機能」➔「Apps Script」を開く</li>
+                        <li><code>doPost(e)</code> と <code>doGet(e)</code> を記述（Gmail送信・Drive保存）</li>
+                        <li>「デプロイ」➔「新しいデプロイ」➔ アクセス権を「全員」にして公開</li>
+                        <li>発効されたウェブアプリURLを上記の入力欄に貼り付けて保存</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl flex justify-between items-center">
+                <button onclick="clearGasUrl()" class="text-red-600 hover:underline font-medium">設定解除 (デモに戻す)</button>
+                <button onclick="saveGasSettings()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium shadow">保存して適用</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: メール通知ログ -->
+    <div id="modalNotifications" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 animate-fade-in">
+        <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[85vh] flex flex-col">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-paper-plane text-indigo-600"></i> メール通知ログ
+                    </h3>
+                    <p class="text-xs text-slate-500">担当者個人のメールアドレスに自動送信されたメッセージ履歴</p>
+                </div>
+                <button onclick="closeModal('modalNotifications')" class="text-slate-400 hover:text-slate-600 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div id="emailLogsList" class="p-6 space-y-4 overflow-y-auto flex-1">
+                <!-- Dynamic Email Logs -->
+            </div>
+
+            <div class="p-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl flex justify-between items-center text-xs text-slate-400">
+                <span>共有アドレスではなく個人宛てに直接送信されます</span>
+                <button onclick="closeModal('modalNotifications')" class="px-4 py-2 bg-slate-800 text-white rounded-lg font-medium">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Area -->
+    <script>
+        // System Config State
+        let gasApiUrl = localStorage.getItem('qr_gas_url') || '';
+
+        // Initial Sample Requests
+        let requests = JSON.parse(localStorage.getItem('qr_requests')) || [
+            {
+                id: 'REQ-2026-001',
+                requester: '木村 (制作部)',
+                assigneeEmail: 'h.yamada@example.com',
+                projectName: '2026年夏カタログ P.10-11',
+                itemCodes: ['8K069', '2K189', '5K706', '5K702', '6K562', '4K508', '5K593'],
+                dueDate: '2026-07-25',
+                spec: 'PNG形式 / 15x15mm',
+                notes: '8K069は新製品のため最優先でお願いいたします。',
+                status: '確認中', // 未対応, 確認中, 完了
+                createdAt: '2026/07/22 14:30',
+                images: [
+                    { name: '8K069.png', code: '8K069', dataUrl: createDummyQRDataUrl('8K069') },
+                    { name: '2K189.png', code: '2K189', dataUrl: createDummyQRDataUrl('2K189') }
+                ]
+            }
+        ];
+
+        let emailLogs = JSON.parse(localStorage.getItem('qr_emails')) || [
+            {
+                id: 1,
+                to: 'h.yamada@example.com',
+                subject: '【新規QR依頼】2026年夏カタログ P.10-11の手配依頼 (REQ-2026-001)',
+                body: '山田様\n\nお世話になっております。木村 (制作部)より新規QRコード発行のご依頼が届きました。\n\n対象品番: 8K069, 2K189, 5K706...\n希望納期: 2026-07-25\n\nシステム上のリンクより作成したQR画像のアップロードをお願いいたします。',
+                time: '2026/07/22 14:30'
+            }
+        ];
+
+        let activeEditingRequestId = null;
+
+        // Save State & Update UI Mode
+        function saveData() {
+            localStorage.setItem('qr_requests', JSON.stringify(requests));
+            localStorage.setItem('qr_emails', JSON.stringify(emailLogs));
+            updateStats();
+        }
+
+        function checkSystemMode() {
+            const badge = document.getElementById('systemModeBadge');
+            const banner = document.getElementById('demoAlertBanner');
+            if (gasApiUrl) {
+                badge.innerText = "実運用モード (GAS連携中)";
+                badge.className = "text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-normal";
+                banner.classList.add('hidden');
+            } else {
+                badge.innerText = "デモモード (ローカル)";
+                badge.className = "text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-normal";
+                banner.classList.remove('hidden');
+            }
+        }
+
+        // Generate Dummy SVG QR Code Data URL
+        function createDummyQRDataUrl(text) {
+            const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" fill="none">
+                <rect width="120" height="120" fill="white"/>
+                <rect x="10" y="10" width="35" height="35" fill="black"/>
+                <rect x="15" y="15" width="25" height="25" fill="white"/>
+                <rect x="20" y="20" width="15" height="15" fill="black"/>
+                <rect x="75" y="10" width="35" height="35" fill="black"/>
+                <rect x="80" y="15" width="25" height="25" fill="white"/>
+                <rect x="85" y="20" width="15" height="15" fill="black"/>
+                <rect x="10" y="75" width="35" height="35" fill="black"/>
+                <rect x="15" y="80" width="25" height="25" fill="white"/>
+                <rect x="20" y="85" width="15" height="15" fill="black"/>
+                <rect x="50" y="20" width="15" height="10" fill="black"/>
+                <rect x="50" y="40" width="20" height="15" fill="black"/>
+                <rect x="75" y="55" width="15" height="15" fill="black"/>
+                <rect x="55" y="75" width="20" height="25" fill="black"/>
+                <rect x="85" y="80" width="20" height="20" fill="black"/>
+                <text x="60" y="113" font-family="sans-serif" font-size="9" font-weight="bold" fill="#4f46e5" text-anchor="middle">${text}</text>
+            </svg>`;
+            return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+        }
+
+        // Render Request Cards
+        function renderRequests() {
+            const container = document.getElementById('requestsList');
+            const statusFilter = document.getElementById('filterStatus').value;
+            const searchKeyword = document.getElementById('searchInput').value.toLowerCase();
+
+            container.innerHTML = '';
+
+            const filtered = requests.filter(req => {
+                const matchStatus = statusFilter === 'ALL' || req.status === statusFilter;
+                const matchSearch = req.itemCodes.join(' ').toLowerCase().includes(searchKeyword) ||
+                                    req.projectName.toLowerCase().includes(searchKeyword) ||
+                                    req.requester.toLowerCase().includes(searchKeyword);
+                return matchStatus && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white p-12 text-center rounded-xl border border-slate-200">
+                        <i class="fa-regular fa-folder-open text-4xl text-slate-300 mb-3"></i>
+                        <p class="text-sm font-medium text-slate-500">該当するQR依頼が見つかりません</p>
+                    </div>
+                `;
+                updateStats();
+                return;
+            }
+
+            filtered.forEach(req => {
+                let statusBadge = '';
+                if (req.status === '未対応') {
+                    statusBadge = `<span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1"><i class="fa-solid fa-clock"></i> 未対応 (手配中)</span>`;
+                } else if (req.status === '確認中') {
+                    statusBadge = `<span class="bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1"><i class="fa-solid fa-images"></i> QR添付済み (${req.images.length}/${req.itemCodes.length})</span>`;
+                } else {
+                    statusBadge = `<span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> 納品完了</span>`;
+                }
+
+                const itemChipsHtml = req.itemCodes.map(code => {
+                    const isAttached = req.images.some(img => img.code === code || img.name.includes(code));
+                    return `
+                        <span class="${isAttached ? 'bg-emerald-50 text-emerald-700 border-emerald-300 font-bold' : 'bg-slate-100 text-slate-700 border-slate-200'} text-xs font-mono px-2 py-0.5 rounded border inline-flex items-center gap-1">
+                            ${isAttached ? '<i class="fa-solid fa-check text-[10px]"></i>' : ''}${code}
+                        </span>
+                    `;
+                }).join('');
+
+                let thumbnailsHtml = '';
+                if (req.images.length > 0) {
+                    thumbnailsHtml = `
+                        <div class="mt-4 pt-4 border-t border-slate-100">
+                            <p class="text-xs font-bold text-slate-500 mb-2 flex items-center gap-1">
+                                <i class="fa-solid fa-file-image text-slate-400"></i> アップロード済みQRサムネイル:
+                            </p>
+                            <div class="flex flex-wrap gap-3">
+                                ${req.images.map(img => `
+                                    <div class="group relative bg-white border border-slate-200 rounded-lg p-1.5 w-20 text-center shadow-sm hover:shadow transition">
+                                        <img src="${img.dataUrl}" alt="${img.name}" class="w-16 h-16 object-contain mx-auto">
+                                        <p class="text-[10px] font-mono font-bold text-slate-700 truncate mt-1">${img.code || img.name}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition";
+                card.innerHTML = `
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 pb-4 border-b border-slate-100">
+                        <div>
+                            <div class="flex items-center gap-3 mb-1">
+                                <span class="font-mono text-xs font-bold text-slate-400">${req.id}</span>
+                                ${statusBadge}
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-800">${req.projectName}</h3>
+                        </div>
+                        <div class="flex items-center gap-2 w-full md:w-auto">
+                            <button onclick="openUploadModal('${req.id}')" class="flex-1 md:flex-initial px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-sm font-bold flex items-center justify-center gap-1.5 transition">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> QR画像を納品・管理
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 py-4 text-xs">
+                        <div>
+                            <span class="text-slate-400 block mb-0.5">依頼者</span>
+                            <span class="font-medium text-slate-700"><i class="fa-regular fa-user text-slate-400 mr-1"></i>${req.requester}</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block mb-0.5">担当者個人アドレス</span>
+                            <span class="font-medium text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded inline-block"><i class="fa-regular fa-envelope mr-1"></i>${req.assigneeEmail}</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block mb-0.5">希望納期</span>
+                            <span class="font-medium text-slate-700"><i class="fa-regular fa-calendar mr-1"></i>${req.dueDate}</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <span class="text-xs text-slate-400 block mb-1.5">対象品番 (${req.itemCodes.length}件)</span>
+                        <div class="flex flex-wrap gap-1.5">
+                            ${itemChipsHtml}
+                        </div>
+                    </div>
+
+                    ${req.notes ? `
+                        <div class="mt-3 bg-slate-50 p-2.5 rounded-lg text-xs text-slate-600 flex items-start gap-2">
+                            <i class="fa-solid fa-circle-info text-slate-400 mt-0.5"></i>
+                            <span>${req.notes}</span>
+                        </div>
+                    ` : ''}
+
+                    ${thumbnailsHtml}
+                `;
+                container.appendChild(card);
+            });
+
+            updateStats();
+        }
+
+        // Update Dashboard Statistics
+        function updateStats() {
+            document.getElementById('statTotal').innerText = requests.length;
+            document.getElementById('statPending').innerText = requests.filter(r => r.status === '未対応').length;
+            document.getElementById('statReview').innerText = requests.filter(r => r.status === '確認中').length;
+            document.getElementById('statCompleted').innerText = requests.filter(r => r.status === '完了').length;
+
+            const badge = document.getElementById('emailBadge');
+            if (emailLogs.length > 0) {
+                badge.innerText = emailLogs.length;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // Form Submission - Create Request
+        async function handleCreateRequest(e) {
+            e.preventDefault();
+            const requester = document.getElementById('inputRequester').value;
+            const assigneeEmail = document.getElementById('inputAssigneeEmail').value;
+            const projectName = document.getElementById('inputProjectName').value;
+            const itemCodesRaw = document.getElementById('inputItemCodes').value;
+            const dueDate = document.getElementById('inputDueDate').value;
+            const spec = document.getElementById('inputSpec').value;
+            const notes = document.getElementById('inputNotes').value;
+
+            const itemCodes = itemCodesRaw.split(/[\s,、\n]+/).filter(c => c.trim() !== '');
+
+            const newReq = {
+                id: 'REQ-2026-' + String(requests.length + 1).padStart(3, '0'),
+                requester,
+                assigneeEmail,
+                projectName,
+                itemCodes,
+                dueDate,
+                spec,
+                notes,
+                status: '未対応',
+                createdAt: new Date().toLocaleString('ja-JP'),
+                images: []
+            };
+
+            // GAS Integration if URL exists
+            if (gasApiUrl) {
+                try {
+                    await fetch(gasApiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'create_request', data: newReq }),
+                        mode: 'no-cors'
+                    });
+                    alert(`【GAS連携完了】${assigneeEmail} 宛てに実際のメール通知を発行しました！`);
+                } catch (err) {
+                    console.error("GAS送信エラー:", err);
+                }
+            } else {
+                alert(`【デモ機能】担当者個人アドレス（${assigneeEmail}）宛のメール通知ログを記録しました。`);
+            }
+
+            requests.unshift(newReq);
+
+            emailLogs.unshift({
+                id: Date.now(),
+                to: assigneeEmail,
+                subject: `【新規QR依頼】${projectName}の手配依頼 (${newReq.id})`,
+                body: `${assigneeEmail} 様\n\nお世話になっております。${requester}より新規QRコード手配のご依頼が届きました。\n\n■対象冊子: ${projectName}\n■希望納期: ${dueDate}\n■品番数: ${itemCodes.length}件 (${itemCodes.join(', ')})\n■仕様: ${spec}\n■備考: ${notes || 'なし'}\n\nシステムへアクセスして添付をお願いいたします。`,
+                time: new Date().toLocaleString('ja-JP')
+            });
+
+            saveData();
+            renderRequests();
+            closeModal('modalNewRequest');
+            document.getElementById('formNewRequest').reset();
+        }
+
+        // Upload Modal Handlers
+        function openUploadModal(id) {
+            activeEditingRequestId = id;
+            const req = requests.find(r => r.id === id);
+            if (!req) return;
+
+            document.getElementById('uploadModalSubTitle').innerText = `対象依頼 ID: ${req.id} | ${req.projectName} (担当: ${req.assigneeEmail})`;
+            renderThumbnailsInModal(req);
+            openModal('modalUploadQR');
+        }
+
+        function renderThumbnailsInModal(req) {
+            const container = document.getElementById('thumbnailContainer');
+            document.getElementById('uploadedCount').innerText = req.images.length;
+
+            if (req.images.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 col-span-full text-center py-6">画像はまだありません。上のエリアにドラッグ＆ドロップしてください。</p>`;
+                return;
+            }
+
+            container.innerHTML = req.images.map((img, idx) => `
+                <div class="bg-white border border-slate-200 rounded-xl p-3 text-center relative shadow-sm group">
+                    <button onclick="removeImage(${idx})" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-[10px] flex items-center justify-center opacity-80 hover:opacity-100 transition">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <img src="${img.dataUrl}" alt="${img.name}" class="w-20 h-20 object-contain mx-auto mb-2 border border-slate-100 rounded">
+                    <p class="text-xs font-mono font-bold text-slate-800 truncate">${img.code || img.name}</p>
+                    <span class="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded font-bold">照合OK</span>
+                </div>
+            `).join('');
+        }
+
+        function handleFileSelect(e) {
+            const files = Array.from(e.target.files);
+            const req = requests.find(r => r.id === activeEditingRequestId);
+            if (!req) return;
+
+            let loadedCount = 0;
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    let extractedCode = file.name.replace(/\.[^/.]+$/, "");
+                    req.images.push({
+                        name: file.name,
+                        code: extractedCode,
+                        dataUrl: evt.target.result
+                    });
+
+                    loadedCount++;
+                    if (loadedCount === files.length) {
+                        if (req.status === '未対応') req.status = '確認中';
+                        saveData();
+                        renderThumbnailsInModal(req);
+                        renderRequests();
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function generateDummyQRs() {
+            const req = requests.find(r => r.id === activeEditingRequestId);
+            if (!req) return;
+
+            req.itemCodes.forEach(code => {
+                if (!req.images.some(i => i.code === code)) {
+                    req.images.push({
+                        name: `${code}.png`,
+                        code: code,
+                        dataUrl: createDummyQRDataUrl(code)
+                    });
+                }
+            });
+
+            if (req.status === '未対応') req.status = '確認中';
+            saveData();
+            renderThumbnailsInModal(req);
+            renderRequests();
+        }
+
+        function removeImage(index) {
+            const req = requests.find(r => r.id === activeEditingRequestId);
+            if (!req) return;
+            req.images.splice(index, 1);
+            if (req.images.length === 0 && req.status === '確認中') req.status = '未対応';
+            saveData();
+            renderThumbnailsInModal(req);
+            renderRequests();
+        }
+
+        function completeRequestDelivery() {
+            const req = requests.find(r => r.id === activeEditingRequestId);
+            if (!req) return;
+
+            req.status = '完了';
+
+            emailLogs.unshift({
+                id: Date.now(),
+                to: `${req.requester} 宛`,
+                subject: `【QR納品完了】${req.projectName}のQRコード手配が完了しました (${req.id})`,
+                body: `${req.requester} 様\n\n担当の ${req.assigneeEmail} よりQRコード (${req.images.length}件) の手配・添付が完了いたしました。\n\n確認のうえ活用ください。`,
+                time: new Date().toLocaleString('ja-JP')
+            });
+
+            saveData();
+            renderRequests();
+            closeModal('modalUploadQR');
+            alert('依頼者宛てに納品完了通知を送信しました！');
+        }
+
+        // Settings Modal Handlers
+        function openSettingsModal() {
+            document.getElementById('gasApiUrl').value = gasApiUrl;
+            openModal('modalSettings');
+        }
+
+        function saveGasSettings() {
+            const url = document.getElementById('gasApiUrl').value.trim();
+            gasApiUrl = url;
+            localStorage.setItem('qr_gas_url', url);
+            checkSystemMode();
+            closeModal('modalSettings');
+            alert(url ? "GAS連携URLを保存しました！実運用モードで動作します。" : "デモモードに設定されました。");
+        }
+
+        function clearGasUrl() {
+            gasApiUrl = '';
+            localStorage.removeItem('qr_gas_url');
+            document.getElementById('gasApiUrl').value = '';
+            checkSystemMode();
+            closeModal('modalSettings');
+            alert("GAS連携を解除し、デモモードに戻しました。");
+        }
+
+        // Email Log Modal Render
+        function openNotificationModal() {
+            const container = document.getElementById('emailLogsList');
+            if (emailLogs.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-8">通知ログはありません</p>`;
+            } else {
+                container.innerHTML = emailLogs.map(log => `
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-2">
+                        <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+                            <span class="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded"><i class="fa-regular fa-paper-plane mr-1"></i>送信先: ${log.to}</span>
+                            <span class="text-slate-400">${log.time}</span>
+                        </div>
+                        <p class="font-bold text-slate-800 text-sm">${log.subject}</p>
+                        <pre class="font-sans text-slate-600 bg-white p-3 rounded border border-slate-100 whitespace-pre-wrap leading-relaxed">${log.body}</pre>
+                    </div>
+                `).join('');
+            }
+            openModal('modalNotifications');
+        }
+
+        // Modal Open/Close Controls
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+            document.getElementById(id).classList.add('flex');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+            document.getElementById(id).classList.remove('flex');
+        }
+
+        // On Load Initializer
+        window.onload = function() {
+            checkSystemMode();
+            renderRequests();
+        };
+    </script>
+</body>
+</html>
