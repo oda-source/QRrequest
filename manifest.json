@@ -1,0 +1,11 @@
+{
+  "name": "QR Flow Express",
+  "details": "Trello内でQRコード手配・依頼を行う機能",
+  "html": "index.html",
+  "icon": {
+    "url": "https://cdn.icon-icons.com/icons2/2699/SHA/512/trello_tile_logo_icon_168807.png"
+  },
+  "capabilities": [
+    "board-buttons"
+  ]
+}
