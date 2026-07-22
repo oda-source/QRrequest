@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QRコード依頼フォーム</title>
+  <title>QR Flow Express</title>
   <style>
     /* 全体基本スタイル */
     * {
@@ -127,7 +127,7 @@
     /* モーダル本体 */
     .modal-content {
       background-color: #ffffff;
-      width: 550px;
+      width: 500px;
       max-width: 90%;
       border-radius: 12px;
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -164,38 +164,32 @@
     /* モーダルボディ */
     .modal-body { padding: 24px; }
 
-    .form-group { margin-bottom: 16px; }
-    .form-row { display: flex; gap: 16px; }
-    .form-group.col { flex: 1; }
+    .form-group { margin-bottom: 20px; }
 
     .form-group label {
       display: block;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       font-weight: 600;
       color: #334155;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
 
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
+    .form-group input {
       width: 100%;
-      padding: 10px 12px;
+      padding: 12px;
       border: 1px solid #cbd5e1;
       border-radius: 6px;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       color: #1e293b;
     }
 
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
+    .form-group input:focus {
       outline: none;
       border-color: #4f46e5;
       box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
     }
 
-    .form-text { font-size: 0.75rem; color: #64748b; margin-top: 4px; }
+    .form-text { font-size: 0.8rem; color: #64748b; margin-top: 6px; }
 
     /* モーダルフッター */
     .modal-footer {
@@ -232,12 +226,12 @@
 
   <!-- サンプルカード -->
   <div class="item-card">
-    <h3>REQ-2026-001：2026年夏カタログ P.10-11</h3>
-    <p style="margin-top: 8px; color: #64748b; font-size: 0.9rem;">依頼者: 木村 (制作部) | 納期: 2026-07-25</p>
+    <h3>REQ-2026-001：サンプル依頼</h3>
+    <p style="margin-top: 8px; color: #64748b; font-size: 0.9rem;">依頼先: h.yamada@example.com | コース番号: 8K069, 2K189</p>
   </div>
 
 
-  <!-- 1. 新規QR依頼モーダル -->
+  <!-- 1. 新規QR依頼モーダル（シンプル版） -->
   <div id="newRequestModal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
       <div class="modal-header">
@@ -246,37 +240,18 @@
       </div>
       <div class="modal-body">
         <form id="qrRequestForm">
-          <div class="form-group">
-            <label for="projectName">案件名</label>
-            <input type="text" id="projectName" name="projectName" placeholder="例：2026年秋カタログ P.10-11" required>
-          </div>
           
-          <div class="form-row">
-            <div class="form-group col">
-              <label for="requestDept">依頼部署</label>
-              <select id="requestDept" name="requestDept" required>
-                <option value="" disabled selected>選択してください</option>
-                <option value="制作部">制作部</option>
-                <option value="営業部">営業部</option>
-                <option value="マーケティング部">マーケティング部</option>
-              </select>
-            </div>
-            <div class="form-group col">
-              <label for="deadline">希望納期</label>
-              <input type="date" id="deadline" name="deadline" required>
-            </div>
+          <div class="form-group">
+            <label for="email">依頼先メールアドレス</label>
+            <input type="email" id="email" name="email" placeholder="example@company.com" required>
           </div>
 
           <div class="form-group">
-            <label for="partNumbers">対象品番</label>
-            <input type="text" id="partNumbers" name="partNumbers" placeholder="8K069, 2K189, 5K706" required>
+            <label for="courseNumbers">コース番号</label>
+            <input type="text" id="courseNumbers" name="courseNumbers" placeholder="8K069, 2K189, 5K706" required>
             <div class="form-text">※複数の場合はコンマ(,)で区切ってください。</div>
           </div>
 
-          <div class="form-group">
-            <label for="remarks">備考・特記事項</label>
-            <textarea id="remarks" name="remarks" rows="3" placeholder="最優先で手配をお願いします、など"></textarea>
-          </div>
         </form>
       </div>
       <div class="modal-footer">
@@ -332,11 +307,6 @@
     // --- モーダル制御（新規依頼） ---
     function openNewRequestModal() {
       document.getElementById('newRequestModal').style.display = 'flex';
-      // 納期のデフォルト（今日から7日後）
-      const deadline = document.getElementById('deadline');
-      const today = new Date();
-      today.setDate(today.getDate() + 7);
-      deadline.value = today.toISOString().split('T')[0];
     }
 
     function closeNewRequestModal() {
@@ -391,11 +361,8 @@
 
       const formData = new FormData(this);
       const data = {
-        projectName: formData.get('projectName'),
-        requestDept: formData.get('requestDept'),
-        deadline: formData.get('deadline'),
-        partNumbers: formData.get('partNumbers'),
-        remarks: formData.get('remarks')
+        email: formData.get('email'),
+        courseNumbers: formData.get('courseNumbers')
       };
 
       fetch(gasUrl, {
