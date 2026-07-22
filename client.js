@@ -13,17 +13,26 @@ window.TrelloPowerUp.initialize({
           var cards = results[1] || [];
 
           var targetCard = cards.find(function (card) {
-            return card.name && card.name.trim() === 'QR添付カード';
+            return card && card.name && card.name.trim() === 'QR添付カード';
           });
 
           var targetUrl = targetCard ? targetCard.url : board.url;
 
-          // ★ popup から ワイドな modal に変更！
           return t.modal({
             title: 'QRコード依頼',
             url: './index.html?targetUrl=' + encodeURIComponent(targetUrl) + '&boardName=' + encodeURIComponent(board.name),
             height: 750,
             fullscreen: false
+          });
+        }).catch(function (err) {
+          console.error('Power-Up Error:', err);
+          return t.board('url', 'name').then(function (board) {
+            return t.modal({
+              title: 'QRコード依頼',
+              url: './index.html?targetUrl=' + encodeURIComponent(board.url) + '&boardName=' + encodeURIComponent(board.name),
+              height: 750,
+              fullscreen: false
+            });
           });
         });
       }
