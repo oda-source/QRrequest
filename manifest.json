@@ -6,6 +6,7 @@
     "url": "https://api.iconify.design/ion:qr-code.svg?color=%234f46e5"
   },
   "capabilities": [
-    "board-buttons"
+    "board-buttons",
+    "card-buttons"
   ]
 }
