@@ -1,5 +1,5 @@
 {
-  "name": "QR Flow Express",
+  "name": "QRコード依頼",
   "details": "Trello内でQRコード手配・依頼を行う機能",
   "html": "index.html",
   "icon": {
