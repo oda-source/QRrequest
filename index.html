@@ -214,7 +214,6 @@
     }
   </style>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
-  <script src="./client.js"></script>
 </head>
 <body>
 
@@ -277,16 +276,9 @@
   </div>
 
   <script>
-    var t = window.TrelloPowerUp.iframe();
-
     document.addEventListener('DOMContentLoaded', () => {
       checkGasStatus();
       loadHistory();
-      
-      // Trelloにサイズ調整を通知
-      t.render(function() {
-        t.sizeTo(document.body);
-      });
     });
 
     function checkGasStatus() {
@@ -353,14 +345,12 @@
 
       localStorage.setItem('qrHistory', JSON.stringify(history));
       loadHistory();
-      t.sizeTo(document.body);
     }
 
     function clearHistory() {
       if (confirm('送信履歴をクリアしますか？')) {
         localStorage.removeItem('qrHistory');
         loadHistory();
-        t.sizeTo(document.body);
       }
     }
 
