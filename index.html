@@ -15,7 +15,15 @@
     body {
       background-color: #f8fafc;
       color: #1e293b;
-      padding: 20px;
+      padding: 16px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
 
     /* ヘッダー */
@@ -25,25 +33,24 @@
       align-items: center;
       background-color: #1e293b;
       color: #fff;
-      padding: 14px 20px;
-      border-radius: 10px;
-      margin-bottom: 20px;
+      padding: 12px 18px;
+      border-radius: 8px;
     }
 
     .header-title h1 {
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       font-weight: bold;
     }
 
     .header-controls {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
     .badge {
-      font-size: 0.8rem;
-      padding: 4px 10px;
+      font-size: 0.75rem;
+      padding: 4px 8px;
       border-radius: 12px;
       font-weight: bold;
     }
@@ -56,8 +63,8 @@
       color: #ffffff;
       border: none;
       border-radius: 6px;
-      padding: 8px 14px;
-      font-size: 0.85rem;
+      padding: 6px 12px;
+      font-size: 0.8rem;
       font-weight: bold;
       cursor: pointer;
       transition: background 0.2s;
@@ -65,50 +72,41 @@
 
     .btn-setting:hover { background-color: #2563eb; }
 
-    /* メインコンテナ */
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
     /* フォームカード */
-    .form-card {
+    .form-card, .history-card {
       background-color: #ffffff;
-      border-radius: 12px;
-      padding: 24px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
       border: 1px solid #e2e8f0;
     }
 
-    .form-card h2 {
-      font-size: 1.2rem;
+    .form-card h2, .history-header h3 {
+      font-size: 1.1rem;
       font-weight: bold;
       color: #0f172a;
-      margin-bottom: 16px;
-      padding-bottom: 10px;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
       border-bottom: 2px solid #f1f5f9;
     }
 
-    .form-group { margin-bottom: 18px; }
+    .form-group { margin-bottom: 14px; }
 
     .form-group label {
       display: block;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: bold;
       color: #334155;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .form-group input,
     .form-group textarea {
       width: 100%;
-      padding: 12px 14px;
+      padding: 10px 12px;
       border: 2px solid #cbd5e1;
-      border-radius: 8px;
-      font-size: 1rem;
+      border-radius: 6px;
+      font-size: 0.95rem;
       color: #0f172a;
       background-color: #f8fafc;
       transition: all 0.2s;
@@ -122,7 +120,7 @@
       box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
     }
 
-    .form-text { font-size: 0.8rem; color: #64748b; margin-top: 6px; }
+    .form-text { font-size: 0.75rem; color: #64748b; margin-top: 4px; }
 
     /* 送信ボタン */
     .btn-submit {
@@ -130,9 +128,9 @@
       background-color: #4f46e5;
       color: #ffffff;
       border: none;
-      border-radius: 8px;
-      padding: 14px;
-      font-size: 1.05rem;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 1rem;
       font-weight: bold;
       cursor: pointer;
       box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
@@ -142,31 +140,19 @@
     .btn-submit:hover { background-color: #4338ca; }
     .btn-submit:disabled { background-color: #94a3b8; cursor: not-allowed; }
 
-    /* 依頼履歴エリア */
-    .history-card {
-      background-color: #ffffff;
-      border-radius: 12px;
-      padding: 24px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-      border: 1px solid #e2e8f0;
-    }
-
+    /* 履歴エリア */
     .history-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #f1f5f9;
+      margin-bottom: 12px;
     }
-
-    .history-header h3 { font-size: 1.1rem; color: #0f172a; }
 
     .btn-clear-history {
       background: none;
       border: none;
       color: #ef4444;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       cursor: pointer;
       text-decoration: underline;
     }
@@ -174,8 +160,8 @@
     .history-list {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      max-height: 250px;
+      gap: 8px;
+      max-height: 200px;
       overflow-y: auto;
     }
 
@@ -184,19 +170,19 @@
       border: 1px solid #e2e8f0;
       border-left: 4px solid #4f46e5;
       border-radius: 6px;
-      padding: 12px 16px;
+      padding: 10px 14px;
     }
 
     .history-meta {
       display: flex;
       justify-content: space-between;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       color: #64748b;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     .history-courses {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: bold;
       color: #1e293b;
       word-break: break-all;
@@ -205,8 +191,8 @@
     .no-history {
       text-align: center;
       color: #94a3b8;
-      font-size: 0.9rem;
-      padding: 20px 0;
+      font-size: 0.85rem;
+      padding: 12px 0;
     }
 
     /* モーダル */
@@ -221,10 +207,10 @@
 
     .modal-content {
       background-color: #fff;
-      width: 400px;
+      width: 380px;
       max-width: 90%;
-      border-radius: 10px;
-      padding: 20px;
+      border-radius: 8px;
+      padding: 18px;
     }
   </style>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
@@ -255,7 +241,7 @@
 
         <div class="form-group">
           <label for="courseNumbers">🔢 コース番号</label>
-          <textarea id="courseNumbers" name="courseNumbers" rows="3" placeholder="8K069, 2K189, 5K706" required></textarea>
+          <textarea id="courseNumbers" name="courseNumbers" rows="2" placeholder="8K069, 2K189, 5K706" required></textarea>
           <div class="form-text">※複数の場合はコンマ(,)で区切って入力してください。</div>
         </div>
 
@@ -263,14 +249,14 @@
       </form>
     </div>
 
-    <!-- 依頼履歴一覧 -->
+    <!-- 送信履歴カード -->
     <div class="history-card">
       <div class="history-header">
-        <h3>📜 送信履歴</h3>
+        <h3 style="margin: 0; padding: 0; border: none;">📜 送信履歴</h3>
         <button class="btn-clear-history" onclick="clearHistory()">履歴をクリア</button>
       </div>
       <div id="historyList" class="history-list">
-        <!-- 履歴がここに自動挿入されます -->
+        <!-- 履歴要素 -->
       </div>
     </div>
   </div>
@@ -278,22 +264,29 @@
   <!-- GAS設定モーダル -->
   <div id="apiSettingModal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
-      <h3 style="margin-bottom: 12px; font-size: 1.1rem;">⚙️ GAS連携設定</h3>
+      <h3 style="margin-bottom: 12px; font-size: 1rem;">⚙️ GAS連携設定</h3>
       <div class="form-group">
-        <label for="gasUrlInput" style="font-size: 0.85rem;">GAS Web API URL</label>
+        <label for="gasUrlInput" style="font-size: 0.8rem;">GAS Web API URL</label>
         <input type="text" id="gasUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
       </div>
-      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
-        <button type="button" onclick="closeApiModal()" style="padding: 8px 12px; border: none; border-radius: 4px; background: #e2e8f0; cursor: pointer;">閉じる</button>
-        <button type="button" onclick="saveGasUrl()" style="padding: 8px 12px; border: none; border-radius: 4px; background: #4f46e5; color: #fff; cursor: pointer;">保存</button>
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px;">
+        <button type="button" onclick="closeApiModal()" style="padding: 6px 12px; border: none; border-radius: 4px; background: #e2e8f0; cursor: pointer;">閉じる</button>
+        <button type="button" onclick="saveGasUrl()" style="padding: 6px 12px; border: none; border-radius: 4px; background: #4f46e5; color: #fff; cursor: pointer;">保存</button>
       </div>
     </div>
   </div>
 
   <script>
+    var t = window.TrelloPowerUp.iframe();
+
     document.addEventListener('DOMContentLoaded', () => {
       checkGasStatus();
       loadHistory();
+      
+      // Trelloにサイズ調整を通知
+      t.render(function() {
+        t.sizeTo(document.body);
+      });
     });
 
     function checkGasStatus() {
@@ -329,7 +322,7 @@
       closeApiModal();
     }
 
-    /* 履歴管理機能 */
+    /* 履歴機能 */
     function loadHistory() {
       const history = JSON.parse(localStorage.getItem('qrHistory') || '[]');
       const container = document.getElementById('historyList');
@@ -356,20 +349,22 @@
       const dateStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
       
       history.unshift({ date: dateStr, email: email, courses: courses });
-      if (history.length > 20) history.pop(); // 直近20件まで保持
+      if (history.length > 20) history.pop();
 
       localStorage.setItem('qrHistory', JSON.stringify(history));
       loadHistory();
+      t.sizeTo(document.body);
     }
 
     function clearHistory() {
       if (confirm('送信履歴をクリアしますか？')) {
         localStorage.removeItem('qrHistory');
         loadHistory();
+        t.sizeTo(document.body);
       }
     }
 
-    /* フォーム送信処理 */
+    /* フォーム送信 */
     document.getElementById('qrRequestForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
@@ -406,7 +401,7 @@
       })
       .then(() => {
         alert('依頼が正常に送信されました！');
-        addHistory(email, courseNumbers); // 履歴を追加
+        addHistory(email, courseNumbers);
         document.getElementById('qrRequestForm').reset();
       })
       .catch(err => {
