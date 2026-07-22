@@ -1,259 +1,4 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QRコード依頼</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    }
-
-    body {
-      background-color: #f8fafc;
-      color: #1e293b;
-      padding: 16px;
-    }
-
-    /* ヘッダー */
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background-color: #1e293b;
-      color: #fff;
-      padding: 12px 16px;
-      border-radius: 8px;
-      margin-bottom: 16px;
-    }
-
-    .header-title h1 {
-      font-size: 1.1rem;
-      font-weight: bold;
-    }
-
-    .badge {
-      font-size: 0.75rem;
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-weight: bold;
-    }
-
-    .badge-success { background-color: #10b981; color: #fff; }
-    .badge-warning { background-color: #f59e0b; color: #fff; }
-
-    .btn-setting {
-      background-color: #334155;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      padding: 6px 12px;
-      font-size: 0.85rem;
-      cursor: pointer;
-    }
-
-    /* メインフォームカード（大きく・見やすく） */
-    .form-card {
-      background-color: #ffffff;
-      border-radius: 12px;
-      padding: 28px 24px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      border: 1px solid #e2e8f0;
-    }
-
-    .form-card h2 {
-      font-size: 1.3rem;
-      font-weight: bold;
-      color: #0f172a;
-      margin-bottom: 20px;
-      padding-bottom: 12px;
-      border-bottom: 2px solid #f1f5f9;
-    }
-
-    .form-group {
-      margin-bottom: 24px;
-    }
-
-    .form-group label {
-      display: block;
-      font-size: 1rem;
-      font-weight: bold;
-      color: #334155;
-      margin-bottom: 8px;
-    }
-
-    /* 入力エリアを大きくデザイン */
-    .form-group input,
-    .form-group textarea {
-      width: 100%;
-      padding: 14px 16px;
-      border: 2px solid #cbd5e1;
-      border-radius: 8px;
-      font-size: 1.05rem;
-      color: #0f172a;
-      background-color: #f8fafc;
-      transition: all 0.2s;
-    }
-
-    .form-group input:focus,
-    .form-group textarea:focus {
-      outline: none;
-      border-color: #4f46e5;
-      background-color: #ffffff;
-      box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
-    }
-
-    .form-text {
-      font-size: 0.85rem;
-      color: #64748b;
-      margin-top: 6px;
-    }
-
-    /* 大きな送信ボタン */
-    .btn-submit {
-      width: 100%;
-      background-color: #4f46e5;
-      color: #ffffff;
-      border: none;
-      border-radius: 8px;
-      padding: 16px;
-      font-size: 1.1rem;
-      font-weight: bold;
-      cursor: pointer;
-      box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
-      transition: all 0.2s;
-    }
-
-    .btn-submit:hover {
-      background-color: #4338ca;
-    }
-
-    .btn-submit:disabled {
-      background-color: #94a3b8;
-      cursor: not-allowed;
-      box-shadow: none;
-    }
-
-    /* API設定モーダル */
-    .modal-overlay {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background-color: rgba(15, 23, 42, 0.6);
-      backdrop-filter: blur(2px);
-      display: flex; justify-content: center; align-items: center;
-      z-index: 1000;
-    }
-
-    .modal-content {
-      background-color: #fff;
-      width: 440px;
-      max-width: 90%;
-      border-radius: 10px;
-      padding: 20px;
-    }
-  </style>
-  <script src="https://p.trellocdn.com/power-up.min.js"></script>
-  <script src="./client.js"></script>
-</head>
-<body>
-
-  <!-- ヘッダー -->
-  <header>
-    <div class="header-title">
-      <h1>QRコード依頼</h1>
-    </div>
-    <div>
-      <span id="modeBadge" class="badge badge-warning">デモ</span>
-      <button class="btn-setting" onclick="openApiModal()">⚙️ GAS設定</button>
-    </div>
-  </header>
-
-  <!-- メイン入力フォーム -->
-  <div class="form-card">
-    <h2>新規QRコード発行依頼</h2>
-    <form id="qrRequestForm">
-      
-      <div class="form-group">
-        <label for="email">📧 依頼先メールアドレス</label>
-        <input type="email" id="email" name="email" placeholder="example@company.com" required>
-      </div>
-
-      <div class="form-group">
-        <label for="courseNumbers">🔢 コース番号</label>
-        <textarea id="courseNumbers" name="courseNumbers" rows="3" placeholder="8K069, 2K189, 5K706" required></textarea>
-        <div class="form-text">※複数の場合はコンマ(,)で区切って入力してください。</div>
-      </div>
-
-      <button type="submit" class="btn-submit" id="submitBtn">依頼を送信する</button>
-    </form>
-  </div>
-
-
-  <!-- GAS設定モーダル -->
-  <div id="apiSettingModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content">
-      <h3 style="margin-bottom: 12px;">⚙️ GAS連携設定</h3>
-      <div class="form-group">
-        <label for="gasUrlInput" style="font-size: 0.85rem;">GAS Web API URL</label>
-        <input type="text" id="gasUrlInput" placeholder="https://script.google.com/macros/s/.../exec" style="padding: 8px; font-size: 0.9rem;">
-      </div>
-      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
-        <button type="button" onclick="clearGasUrl()" style="padding: 8px 12px; border: none; border-radius: 4px; background: #e2e8f0; cursor: pointer;">解除</button>
-        <button type="button" onclick="saveGasUrl()" style="padding: 8px 12px; border: none; border-radius: 4px; background: #4f46e5; color: #fff; cursor: pointer;">保存</button>
-      </div>
-    </div>
-  </div>
-
-
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      checkGasStatus();
-    });
-
-    function checkGasStatus() {
-      const savedUrl = localStorage.getItem('gasWebApiUrl');
-      const badge = document.getElementById('modeBadge');
-      if (savedUrl) {
-        badge.textContent = 'GAS連携中';
-        badge.className = 'badge badge-success';
-      } else {
-        badge.textContent = 'デモ';
-        badge.className = 'badge badge-warning';
-      }
-    }
-
-    function openApiModal() {
-      document.getElementById('apiSettingModal').style.display = 'flex';
-      document.getElementById('gasUrlInput').value = localStorage.getItem('gasWebApiUrl') || '';
-    }
-
-    function closeApiModal() {
-      document.getElementById('apiSettingModal').style.display = 'none';
-    }
-
-    function saveGasUrl() {
-      const url = document.getElementById('gasUrlInput').value.trim();
-      if (url) {
-        localStorage.setItem('gasWebApiUrl', url);
-        alert('GAS URLを保存しました！');
-      } else {
-        localStorage.removeItem('gasWebApiUrl');
-      }
-      checkGasStatus();
-      closeApiModal();
-    }
-
-    function clearGasUrl() {
-      localStorage.removeItem('gasWebApiUrl');
-      document.getElementById('gasUrlInput').value = '';
-      checkGasStatus();
-      closeApiModal();
-    }
-
-    // フォーム送信処理
+// フォーム送信処理
     document.getElementById('qrRequestForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
@@ -265,13 +10,20 @@
         return;
       }
 
+      // URLパラメータから自動取得したボードURLとボード名を取り出す
+      const urlParams = new URLSearchParams(window.location.search);
+      const boardUrl = urlParams.get('boardUrl') || '';
+      const boardName = urlParams.get('boardName') || '';
+
       submitBtn.disabled = true;
       submitBtn.textContent = '送信中...';
 
       const formData = new FormData(this);
       const data = {
         email: formData.get('email'),
-        courseNumbers: formData.get('courseNumbers')
+        courseNumbers: formData.get('courseNumbers'),
+        boardUrl: boardUrl,
+        boardName: boardName
       };
 
       fetch(gasUrl, {
@@ -293,6 +45,3 @@
         submitBtn.textContent = '依頼を送信する';
       });
     });
-  </script>
-</body>
-</html>
