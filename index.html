@@ -1,15 +1,10 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <!-- Trello Power-Up ライブラリの読み込み -->
-<script src="https://p.trellocdn.com/power-up.min.js"></script>
-<script src="./client.js"></script>
-  
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QR Flow Express</title>
+  <title>QRコード依頼</title>
   <style>
-    /* 全体基本スタイル */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -18,9 +13,9 @@
     }
 
     body {
-      background-color: #f0f2f5;
-      color: #333;
-      padding: 20px;
+      background-color: #f8fafc;
+      color: #1e293b;
+      padding: 16px;
     }
 
     /* ヘッダー */
@@ -28,21 +23,15 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background-color: #1a233a;
+      background-color: #1e293b;
       color: #fff;
-      padding: 12px 24px;
+      padding: 12px 16px;
       border-radius: 8px;
-      margin-bottom: 20px;
-    }
-
-    .header-title {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+      margin-bottom: 16px;
     }
 
     .header-title h1 {
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       font-weight: bold;
     }
 
@@ -56,269 +45,186 @@
     .badge-success { background-color: #10b981; color: #fff; }
     .badge-warning { background-color: #f59e0b; color: #fff; }
 
-    .header-actions {
-      display: flex;
-      gap: 12px;
-    }
-
-    /* ボタン共通 */
-    button {
-      cursor: pointer;
+    .btn-setting {
+      background-color: #334155;
+      color: #fff;
       border: none;
       border-radius: 6px;
-      padding: 8px 16px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      transition: all 0.2s;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      cursor: pointer;
     }
 
-    .btn-primary { background-color: #4f46e5; color: #fff; }
-    .btn-primary:hover { background-color: #4338ca; }
-    
-    .btn-setting { background-color: #374151; color: #fff; }
-    .btn-setting:hover { background-color: #4b5563; }
-
-    .btn-secondary { background-color: #e5e7eb; color: #374151; }
-    .btn-secondary:hover { background-color: #d1d5db; }
-
-    /* ダッシュボードカード */
-    .dashboard-cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      margin-bottom: 20px;
-    }
-
-    .card {
-      background-color: #fff;
-      padding: 16px;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      border-left: 4px solid #cbd5e1;
-    }
-
-    .card.blue { border-left-color: #3b82f6; }
-    .card.yellow { border-left-color: #f59e0b; }
-    .card.green { border-left-color: #10b981; }
-
-    .card-title { font-size: 0.85rem; color: #64748b; font-weight: bold; }
-    .card-value { font-size: 1.8rem; font-weight: bold; margin-top: 4px; }
-
-    /* 案件カード */
-    .item-card {
-      background-color: #fff;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
-
-    /* モーダル背景 */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(15, 23, 42, 0.6);
-      backdrop-filter: blur(4px);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-
-    /* モーダル本体 */
-    .modal-content {
+    /* メインフォームカード（大きく・見やすく） */
+    .form-card {
       background-color: #ffffff;
-      width: 500px;
-      max-width: 90%;
       border-radius: 12px;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-      overflow: hidden;
-      animation: modalSlideDown 0.25s ease-out;
+      padding: 28px 24px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e2e8f0;
     }
 
-    @keyframes modalSlideDown {
-      from { opacity: 0; transform: translateY(-16px); }
-      to { opacity: 1; transform: translateY(0); }
+    .form-card h2 {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #0f172a;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #f1f5f9;
     }
 
-    /* モーダルヘッダー */
-    .modal-header {
-      background-color: #1e293b;
-      color: #ffffff;
-      padding: 16px 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .form-group {
+      margin-bottom: 24px;
     }
-
-    .modal-header h2 { font-size: 1.1rem; font-weight: 600; }
-
-    .close-button {
-      background: none;
-      border: none;
-      color: #94a3b8;
-      font-size: 1.5rem;
-      padding: 0;
-    }
-    .close-button:hover { color: #ffffff; }
-
-    /* モーダルボディ */
-    .modal-body { padding: 24px; }
-
-    .form-group { margin-bottom: 20px; }
 
     .form-group label {
       display: block;
-      font-size: 0.9rem;
-      font-weight: 600;
+      font-size: 1rem;
+      font-weight: bold;
       color: #334155;
       margin-bottom: 8px;
     }
 
-    .form-group input {
+    /* 入力エリアを大きくデザイン */
+    .form-group input,
+    .form-group textarea {
       width: 100%;
-      padding: 12px;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      font-size: 0.95rem;
-      color: #1e293b;
+      padding: 14px 16px;
+      border: 2px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 1.05rem;
+      color: #0f172a;
+      background-color: #f8fafc;
+      transition: all 0.2s;
     }
 
-    .form-group input:focus {
+    .form-group input:focus,
+    .form-group textarea:focus {
       outline: none;
       border-color: #4f46e5;
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+      background-color: #ffffff;
+      box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
     }
 
-    .form-text { font-size: 0.8rem; color: #64748b; margin-top: 6px; }
+    .form-text {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-top: 6px;
+    }
 
-    /* モーダルフッター */
-    .modal-footer {
-      padding: 16px 24px;
-      background-color: #f8fafc;
-      border-top: 1px solid #e2e8f0;
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
+    /* 大きな送信ボタン */
+    .btn-submit {
+      width: 100%;
+      background-color: #4f46e5;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
+      transition: all 0.2s;
+    }
+
+    .btn-submit:hover {
+      background-color: #4338ca;
+    }
+
+    .btn-submit:disabled {
+      background-color: #94a3b8;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* API設定モーダル */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-color: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(2px);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background-color: #fff;
+      width: 440px;
+      max-width: 90%;
+      border-radius: 10px;
+      padding: 20px;
     }
   </style>
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  <script src="./client.js"></script>
 </head>
 <body>
 
   <!-- ヘッダー -->
   <header>
     <div class="header-title">
-      <h1>QR Flow Express</h1>
-      <span id="modeBadge" class="badge badge-warning">デモモード (ローカル)</span>
+      <h1>QRコード依頼</h1>
     </div>
-    <div class="header-actions">
-      <button class="btn-setting" onclick="openApiModal()">⚙️ API/GAS設定</button>
-      <button class="btn-primary" onclick="openNewRequestModal()">＋ 新規QR依頼を作成</button>
+    <div>
+      <span id="modeBadge" class="badge badge-warning">デモ</span>
+      <button class="btn-setting" onclick="openApiModal()">⚙️ GAS設定</button>
     </div>
   </header>
 
-  <!-- ダッシュボードカード -->
-  <div class="dashboard-cards">
-    <div class="card"><div class="card-title">全依頼数</div><div class="card-value">1</div></div>
-    <div class="card yellow"><div class="card-title">未対応 (手配中)</div><div class="card-value">0</div></div>
-    <div class="card blue"><div class="card-title">確認中 / 添付済み</div><div class="card-value">1</div></div>
-    <div class="card green"><div class="card-title">納品完了</div><div class="card-value">0</div></div>
-  </div>
-
-  <!-- サンプルカード -->
-  <div class="item-card">
-    <h3>REQ-2026-001：サンプル依頼</h3>
-    <p style="margin-top: 8px; color: #64748b; font-size: 0.9rem;">依頼先: h.yamada@example.com | コース番号: 8K069, 2K189</p>
-  </div>
-
-
-  <!-- 1. 新規QR依頼モーダル（シンプル版） -->
-  <div id="newRequestModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>新規QR依頼フォーム</h2>
-        <button class="close-button" onclick="closeNewRequestModal()">&times;</button>
+  <!-- メイン入力フォーム -->
+  <div class="form-card">
+    <h2>新規QRコード発行依頼</h2>
+    <form id="qrRequestForm">
+      
+      <div class="form-group">
+        <label for="email">📧 依頼先メールアドレス</label>
+        <input type="email" id="email" name="email" placeholder="example@company.com" required>
       </div>
-      <div class="modal-body">
-        <form id="qrRequestForm">
-          
-          <div class="form-group">
-            <label for="email">依頼先メールアドレス</label>
-            <input type="email" id="email" name="email" placeholder="example@company.com" required>
-          </div>
 
-          <div class="form-group">
-            <label for="courseNumbers">コース番号</label>
-            <input type="text" id="courseNumbers" name="courseNumbers" placeholder="8K069, 2K189, 5K706" required>
-            <div class="form-text">※複数の場合はコンマ(,)で区切ってください。</div>
-          </div>
+      <div class="form-group">
+        <label for="courseNumbers">🔢 コース番号</label>
+        <textarea id="courseNumbers" name="courseNumbers" rows="3" placeholder="8K069, 2K189, 5K706" required></textarea>
+        <div class="form-text">※複数の場合はコンマ(,)で区切って入力してください。</div>
+      </div>
 
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn-secondary" onclick="closeNewRequestModal()">キャンセル</button>
-        <button type="submit" form="qrRequestForm" class="btn-primary" id="submitBtn">依頼を送信</button>
-      </div>
-    </div>
+      <button type="submit" class="btn-submit" id="submitBtn">依頼を送信する</button>
+    </form>
   </div>
 
 
-  <!-- 2. API/GAS設定モーダル -->
+  <!-- GAS設定モーダル -->
   <div id="apiSettingModal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
-      <div class="modal-header">
-        <h2>⚙️ 実運用 (GAS) 連携設定</h2>
-        <button class="close-button" onclick="closeApiModal()">&times;</button>
+      <h3 style="margin-bottom: 12px;">⚙️ GAS連携設定</h3>
+      <div class="form-group">
+        <label for="gasUrlInput" style="font-size: 0.85rem;">GAS Web API URL</label>
+        <input type="text" id="gasUrlInput" placeholder="https://script.google.com/macros/s/.../exec" style="padding: 8px; font-size: 0.9rem;">
       </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label for="gasUrlInput">GAS Web API エンドポイント URL</label>
-          <input type="text" id="gasUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
-          <div class="form-text">※URLを設定するとスプレッドシート連携に自動切り替わります。</div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn-secondary" onclick="clearGasUrl()">設定解除</button>
-        <button type="button" class="btn-primary" onclick="saveGasUrl()">保存して適用</button>
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+        <button type="button" onclick="clearGasUrl()" style="padding: 8px 12px; border: none; border-radius: 4px; background: #e2e8f0; cursor: pointer;">解除</button>
+        <button type="button" onclick="saveGasUrl()" style="padding: 8px 12px; border: none; border-radius: 4px; background: #4f46e5; color: #fff; cursor: pointer;">保存</button>
       </div>
     </div>
   </div>
 
 
-  <!-- スクリプト制御 -->
   <script>
-    // 画面初期化時のチェック
     document.addEventListener('DOMContentLoaded', () => {
       checkGasStatus();
     });
 
-    // GAS設定のステータスチェック＆表示更新
     function checkGasStatus() {
       const savedUrl = localStorage.getItem('gasWebApiUrl');
       const badge = document.getElementById('modeBadge');
       if (savedUrl) {
-        badge.textContent = '実運用モード (GAS連携中)';
+        badge.textContent = 'GAS連携中';
         badge.className = 'badge badge-success';
       } else {
-        badge.textContent = 'デモモード (ローカル)';
+        badge.textContent = 'デモ';
         badge.className = 'badge badge-warning';
       }
     }
 
-    // --- モーダル制御（新規依頼） ---
-    function openNewRequestModal() {
-      document.getElementById('newRequestModal').style.display = 'flex';
-    }
-
-    function closeNewRequestModal() {
-      document.getElementById('newRequestModal').style.display = 'none';
-      document.getElementById('qrRequestForm').reset();
-    }
-
-    // --- モーダル制御（API設定） ---
     function openApiModal() {
       document.getElementById('apiSettingModal').style.display = 'flex';
       document.getElementById('gasUrlInput').value = localStorage.getItem('gasWebApiUrl') || '';
@@ -332,7 +238,7 @@
       const url = document.getElementById('gasUrlInput').value.trim();
       if (url) {
         localStorage.setItem('gasWebApiUrl', url);
-        alert('GAS Web API URLを保存しました！');
+        alert('GAS URLを保存しました！');
       } else {
         localStorage.removeItem('gasWebApiUrl');
       }
@@ -343,12 +249,11 @@
     function clearGasUrl() {
       localStorage.removeItem('gasWebApiUrl');
       document.getElementById('gasUrlInput').value = '';
-      alert('設定を解除しデモモードに戻しました。');
       checkGasStatus();
       closeApiModal();
     }
 
-    // --- フォーム送信処理 (GAS POST) ---
+    // フォーム送信処理
     document.getElementById('qrRequestForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
@@ -356,7 +261,7 @@
       const gasUrl = localStorage.getItem('gasWebApiUrl');
 
       if (!gasUrl) {
-        alert('【エラー】GASのURLが設定されていません。\n右上の「⚙️ API/GAS設定」からURLを入力してください。');
+        alert('【エラー】GASのURLが設定されていません。\n右上の「⚙️ GAS設定」からURLを入力してください。');
         return;
       }
 
@@ -376,8 +281,8 @@
         body: JSON.stringify(data)
       })
       .then(() => {
-        alert('依頼を送信しました！');
-        closeNewRequestModal();
+        alert('依頼が正常に送信されました！');
+        document.getElementById('qrRequestForm').reset();
       })
       .catch(err => {
         console.error(err);
@@ -385,7 +290,7 @@
       })
       .finally(() => {
         submitBtn.disabled = false;
-        submitBtn.textContent = '依頼を送信';
+        submitBtn.textContent = '依頼を送信する';
       });
     });
   </script>
