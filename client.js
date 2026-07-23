@@ -37,12 +37,13 @@ window.TrelloPowerUp.initialize({
       }
     }];
   },
-  // ★ 「⚙️ 設定」メニューを押した時の設定ポップアップ処理を追加
+  
+  // ★ 「Power-Upの設定を編集」をクリックした時の処理
   'show-settings': function (t, opts) {
     return t.popup({
       title: 'GAS連携設定',
       url: './settings.html',
-      height: 240
+      height: 220
     });
   }
 });
