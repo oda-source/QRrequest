@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>GAS連携設定</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+    body { padding: 14px; background: #fff; color: #1e293b; }
+    label { display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 6px; }
+    input { width: 100%; padding: 8px; border: 2px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; margin-bottom: 12px; }
+    .btn-container { display: flex; justify-content: flex-end; gap: 8px; }
+    button { padding: 6px 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.8rem; }
+    .btn-save { background: #4f46e5; color: #fff; }
+    .btn-clear { background: #ef4444; color: #fff; }
+  </style>
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+</head>
+<body>
+  <div>
+    <label for="gasUrl">GAS Web API URL</label>
+    <input type="text" id="gasUrl" placeholder="https://script.google.com/macros/s/.../exec">
+    <div class="btn-container">
+      <button type="button" class="btn-clear" onclick="clearUrl()">解除</button>
+      <button type="button" class="btn-save" onclick="saveUrl()">保存</button>
+    </div>
+  </div>
+
+  <script>
+    var t = window.TrelloPowerUp.iframe();
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('gasUrl').value = localStorage.getItem('gasWebApiUrl') || '';
+    });
+
+    function saveUrl() {
+      const url = document.getElementById('gasUrl').value.trim();
+      if (url) {
+        localStorage.setItem('gasWebApiUrl', url);
+        alert('GAS URLを保存しました！');
+      } else {
+        localStorage.removeItem('gasWebApiUrl');
+      }
+      t.closePopup();
+    }
+
+    function clearUrl() {
+      localStorage.removeItem('gasWebApiUrl');
+      document.getElementById('gasUrl').value = '';
+      alert('設定を解除しました。');
+      t.closePopup();
+    }
+  </script>
+</body>
+</html>
