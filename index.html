@@ -86,7 +86,68 @@
       margin-bottom: 6px;
     }
 
-    .form-group input,
+    /* 宛先チェックボックスリスト */
+    .recipient-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .btn-add-recipient {
+      background: none;
+      border: none;
+      color: #4f46e5;
+      font-size: 0.8rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .recipient-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background-color: #f8fafc;
+      padding: 10px 12px;
+      border: 2px solid #cbd5e1;
+      border-radius: 6px;
+    }
+
+    .recipient-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #1e293b;
+    }
+
+    .recipient-item label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 0;
+      cursor: pointer;
+    }
+
+    .recipient-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #4f46e5;
+      cursor: pointer;
+    }
+
+    .btn-del-recipient {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 0.75rem;
+      cursor: pointer;
+      padding: 2px 6px;
+    }
+
+    .btn-del-recipient:hover { color: #ef4444; }
+
     .form-group textarea {
       width: 100%;
       padding: 10px 12px;
@@ -98,7 +159,6 @@
       transition: all 0.2s;
     }
 
-    .form-group input:focus,
     .form-group textarea:focus {
       outline: none;
       border-color: #4f46e5;
@@ -205,9 +265,15 @@
     <div class="form-card">
       <h2>新規QRコード発行依頼</h2>
       <form id="qrRequestForm">
+        <!-- 宛先選択エリア -->
         <div class="form-group">
-          <label for="email">📧 依頼先メールアドレス</label>
-          <input type="email" id="email" name="email" placeholder="example@company.com" required>
+          <div class="recipient-header">
+            <label>📧 依頼先メールアドレス</label>
+            <button type="button" class="btn-add-recipient" onclick="addRecipientPrompt()">➕ 宛先を追加</button>
+          </div>
+          <div id="recipientList" class="recipient-list">
+            <!-- チェックボックス群が自動生成されます -->
+          </div>
         </div>
 
         <div class="form-group">
@@ -233,8 +299,15 @@
   </div>
 
   <script>
+    // デフォルト宛先リスト
+    const DEFAULT_RECIPIENTS = [
+      { name: '木村 名子', email: '352724@hei.hankyu.co.jp' },
+      { name: '玉橋 英也', email: 'tamahashi@hei.hankyu.co.jp' }
+    ];
+
     document.addEventListener('DOMContentLoaded', () => {
       checkGasStatus();
+      initRecipients();
       loadHistory();
     });
 
@@ -250,6 +323,52 @@
       }
     }
 
+    /* 宛先管理機能 */
+    function getRecipients() {
+      const saved = localStorage.getItem('qrRecipients');
+      if (!saved) {
+        localStorage.setItem('qrRecipients', JSON.stringify(DEFAULT_RECIPIENTS));
+        return DEFAULT_RECIPIENTS;
+      }
+      return JSON.parse(saved);
+    }
+
+    function initRecipients() {
+      const recipients = getRecipients();
+      const container = document.getElementById('recipientList');
+
+      container.innerHTML = recipients.map((r, index) => `
+        <div class="recipient-item">
+          <label>
+            <input type="checkbox" name="recipient" value="${r.email}" checked>
+            <span>${r.name} &lt;${r.email}&gt;</span>
+          </label>
+          <button type="button" class="btn-del-recipient" onclick="deleteRecipient(${index})" title="削除">✖</button>
+        </div>
+      `).join('');
+    }
+
+    function addRecipientPrompt() {
+      const name = prompt('お名前を入力してください（例: 山田 太郎）:');
+      if (!name) return;
+      const email = prompt('メールアドレスを入力してください（例: yamada@company.co.jp）:');
+      if (!email) return;
+
+      const recipients = getRecipients();
+      recipients.push({ name: name.trim(), email: email.trim() });
+      localStorage.setItem('qrRecipients', JSON.stringify(recipients));
+      initRecipients();
+    }
+
+    function deleteRecipient(index) {
+      const recipients = getRecipients();
+      if (confirm(`「${recipients[index].name}」さんを宛先リストから削除しますか？`)) {
+        recipients.splice(index, 1);
+        localStorage.setItem('qrRecipients', JSON.stringify(recipients));
+        initRecipients();
+      }
+    }
+
     /* 履歴＆添付自動照合機能 */
     function loadHistory() {
       const historyCourses = JSON.parse(localStorage.getItem('qrCourseList') || '[]');
@@ -260,7 +379,6 @@
         return;
       }
 
-      // URLパラメータから添付ファイル一覧を取得
       const urlParams = new URLSearchParams(window.location.search);
       let attachments = [];
       try {
@@ -269,12 +387,9 @@
         attachments = [];
       }
 
-      // 名前（アルファベット・数字）順にソート
       historyCourses.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
 
-      // 照合レンダリング
       container.innerHTML = historyCourses.map(course => {
-        // 添付ファイル名の中にコース番号が含まれているか判定 (例: "6K562.png" か "6K562")
         const isAttached = attachments.some(file => file.toUpperCase().includes(course.toUpperCase()));
 
         if (isAttached) {
@@ -288,12 +403,10 @@
     function addHistoryCourses(courseStr) {
       let existingCourses = JSON.parse(localStorage.getItem('qrCourseList') || '[]');
       
-      // カンマ区切りのコース番号を分解・整形
       const newCourses = courseStr.split(/[,、\s]+/)
         .map(c => c.trim())
         .filter(c => c.length > 0);
 
-      // 重複を除外して統合
       newCourses.forEach(c => {
         if (!existingCourses.includes(c)) {
           existingCourses.push(c);
@@ -323,18 +436,25 @@
         return;
       }
 
+      // チェックされている宛先メールアドレスを取得（カンマ結合）
+      const checkedBoxes = document.querySelectorAll('input[name="recipient"]:checked');
+      if (checkedBoxes.length === 0) {
+        alert('【エラー】依頼先のメールアドレスを1つ以上選択してください。');
+        return;
+      }
+      const selectedEmails = Array.from(checkedBoxes).map(cb => cb.value).join(',');
+
       const urlParams = new URLSearchParams(window.location.search);
       const targetUrl = urlParams.get('targetUrl') || '';
       const boardName = urlParams.get('boardName') || '';
 
-      const email = document.getElementById('email').value;
       const courseNumbers = document.getElementById('courseNumbers').value;
 
       submitBtn.disabled = true;
       submitBtn.textContent = '送信中...';
 
       const data = {
-        email: email,
+        email: selectedEmails,
         courseNumbers: courseNumbers,
         targetUrl: targetUrl,
         boardName: boardName
