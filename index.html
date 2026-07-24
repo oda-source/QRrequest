@@ -42,22 +42,6 @@
       font-weight: bold;
     }
 
-    .header-controls {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .badge {
-      font-size: 0.75rem;
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-weight: bold;
-    }
-
-    .badge-success { background-color: #10b981; color: #fff; }
-    .badge-warning { background-color: #f59e0b; color: #fff; }
-
     /* フォームカード */
     .form-card, .history-card {
       background-color: #ffffff;
@@ -256,9 +240,6 @@
       <div class="header-title">
         <h1>QRコード依頼</h1>
       </div>
-      <div class="header-controls">
-        <span id="modeBadge" class="badge badge-warning">デモ</span>
-      </div>
     </header>
 
     <!-- 入力フォーム -->
@@ -306,22 +287,9 @@
     ];
 
     document.addEventListener('DOMContentLoaded', () => {
-      checkGasStatus();
       initRecipients();
       loadHistory();
     });
-
-    function checkGasStatus() {
-      const savedUrl = localStorage.getItem('gasWebApiUrl');
-      const badge = document.getElementById('modeBadge');
-      if (savedUrl) {
-        badge.textContent = 'GAS連携中';
-        badge.className = 'badge badge-success';
-      } else {
-        badge.textContent = '未連携';
-        badge.className = 'badge badge-warning';
-      }
-    }
 
     /* 宛先管理機能 */
     function getRecipients() {
@@ -436,7 +404,6 @@
         return;
       }
 
-      // チェックされている宛先メールアドレスを取得（カンマ結合）
       const checkedBoxes = document.querySelectorAll('input[name="recipient"]:checked');
       if (checkedBoxes.length === 0) {
         alert('【エラー】依頼先のメールアドレスを1つ以上選択してください。');
